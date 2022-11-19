@@ -3,13 +3,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
 import 'package:untitled3/bloc/home_cubit.dart';
 import 'package:untitled3/core/feature/bloc/theme_bloc/theme_cubit.dart';
 import 'package:untitled3/core/widget/widgets.dart';
 import 'package:untitled3/injection_container.dart';
+
+import 'collection.dart';
 
 void main() {
   init();
@@ -156,8 +157,8 @@ class _MyMainScreenState extends State<MyMainScreen> {
                         transformHitTests: true,
                         angle: -math.pi / 4,
                         child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          height: MediaQuery.of(context).size.height * 0.4,
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          height: MediaQuery.of(context).size.width * 0.7,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -170,7 +171,7 @@ class _MyMainScreenState extends State<MyMainScreen> {
                                 child: Row(
                                   children: element.map((element2) {
                                     switch (element2) {
-                                      case TheStatePossibleValue.red:
+                                      case TheStatePossibleValue.yellow:
                                         return Expanded(
                                           child: Container(
                                             decoration: BoxDecoration(
@@ -303,12 +304,26 @@ class _MyMainScreenState extends State<MyMainScreen> {
                     ),
                     CustomButton(
                       buttonName: 'Ucs',
-                      onTap: () {},
+                      onTap: () {
+                        Stopwatch stopwatch = Stopwatch()..start();
+                        sl<HomeCubit>().initState(widget.blockSize);
+                        sl<HomeCubit>().redBlueBlankGame!.doUcs();
+                        sl<HomeCubit>().exTime =
+                            'Ucs executed in ${stopwatch.elapsed}\nand the number of visited state is ${sl<HomeCubit>().redBlueBlankGame!.vis.length}';
+                        showTheAlgorithmPath();
+                      },
                     ),
                   ],
                 ),
                 const SizedBox(
-                  height: 20,
+                  height: 10,
+                ),
+                CustomButton(
+                  buttonName: 'A*',
+                  onTap: () {},
+                ),
+                const SizedBox(
+                  height: 10,
                 ),
                 CustomButton(
                   buttonName: 'Reset',
@@ -350,7 +365,7 @@ class RedBlueBlankGame {
       theState.current.add(<TheStatePossibleValue>[]);
       for (int j = 0; j <= theSizeOfEachBlock * 2 - 2; j++) {
         if (i >= theSizeOfEachBlock - 1 && j >= theSizeOfEachBlock - 1) {
-          theState.current[i].add(TheStatePossibleValue.red);
+          theState.current[i].add(TheStatePossibleValue.yellow);
         } else if (i < theSizeOfEachBlock && j < theSizeOfEachBlock) {
           theState.current[i].add(TheStatePossibleValue.blue);
         } else {
@@ -508,7 +523,7 @@ class RedBlueBlankGame {
           check = false;
         } else if (i < theSizeOfEachBlock &&
             j < theSizeOfEachBlock &&
-            li.current[i][j] != TheStatePossibleValue.red) {
+            li.current[i][j] != TheStatePossibleValue.yellow) {
           check = false;
         }
       }
@@ -641,6 +656,36 @@ class RedBlueBlankGame {
       }
     }
   }
+
+  void doUcs() {
+    vis.clear();
+    thePathThatTheAlgorithmWentFrom.clear();
+    isWinState = false;
+    bfs();
+  }
+
+  void ucs() {
+    PriorityQueue<TheState> qe =
+        PriorityQueue<TheState>((a, b) => b.cost.compareTo(a.cost));
+    qe.enQueue(theState);
+    while (qe.isNotEmpty) {
+      TheState current = qe.peek!;
+      if (win(current)) {
+        while (current.par != null) {
+          thePathThatTheAlgorithmWentFrom.add(current.copy());
+          current = current.par!;
+        }
+        break;
+      }
+      qe.deQueue();
+      if (checkIfVisited(current)) continue;
+      makeCurrentVisited(current);
+      List<TheState> nextState = getNextState(current);
+      for (var element in nextState) {
+        qe.enQueue(element);
+      }
+    }
+  }
 }
 
 class TheState {
@@ -685,7 +730,7 @@ class TheState {
 }
 
 /// an enum to know what the current field contain
-enum TheStatePossibleValue { red, blue, blank, anActiveSpace }
+enum TheStatePossibleValue { yellow, blue, blank, anActiveSpace }
 
 /// every possible direction we can go to
 enum ThePossibleDirection {
