@@ -1,9 +1,14 @@
+import 'dart:collection';
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
 import 'package:untitled3/bloc/home_cubit.dart';
 import 'package:untitled3/core/feature/bloc/theme_bloc/theme_cubit.dart';
+import 'package:untitled3/core/widget/widgets.dart';
 import 'package:untitled3/injection_container.dart';
 
 void main() {
@@ -38,16 +43,23 @@ class TheLevelPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white10,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           Column(
             children: const [
               Text(
-                "rED BLuE BLaNK GAmE",
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
+                "Yellow Blue Blank Game",
+                style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white),
               ),
-              Text('swap between the red and the blue to win,good Luck'),
+              Text(
+                'swap between the Yellow and the blue to win,good Luck',
+                style: TextStyle(color: Colors.white),
+              ),
             ],
           ),
           Column(
@@ -58,8 +70,8 @@ class TheLevelPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     for (int i = 1; i < 4; i++)
-                      TextButton(
-                        onPressed: () {
+                      CustomButton(
+                        onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -68,41 +80,11 @@ class TheLevelPage extends StatelessWidget {
                             ),
                           );
                         },
-                        child: Text('Level $i'),
+                        buttonName: 'Level $i',
                       ),
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 20,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      decoration:
-                          const InputDecoration(hintText: "custom game level"),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ], // Only numbers can be entered
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MyMainScreen(
-                              blockSize: int.parse(controller.text)),
-                        ),
-                      );
-                    },
-                    child: const Text('let\'s go'),
-                  )
-                ],
-              )
             ],
           ),
         ],
@@ -126,12 +108,134 @@ class _MyMainScreenState extends State<MyMainScreen> {
     sl<HomeCubit>().initState(widget.blockSize);
   }
 
+  void showTheAlgorithmPath() {
+    sl<HomeCubit>().redBlueBlankGame!.thePathThatTheAlgorithmWentFrom =
+        sl<HomeCubit>()
+            .redBlueBlankGame!
+            .thePathThatTheAlgorithmWentFrom
+            .reversed
+            .toList();
+
+    sl<HomeCubit>().algorithmAns = sl<HomeCubit>()
+        .redBlueBlankGame!
+        .thePathThatTheAlgorithmWentFrom
+        .length;
+    Future.forEach(
+        sl<HomeCubit>().redBlueBlankGame!.thePathThatTheAlgorithmWentFrom,
+        (element) async {
+      await Future.delayed(
+        const Duration(milliseconds: 100),
+        () {
+          sl<HomeCubit>().redBlueBlankGame!.theState = element;
+          sl<HomeCubit>().notify();
+        },
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          BlocBuilder(
+      backgroundColor: Colors.white10,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            BlocBuilder(
+                buildWhen: (previous, current) {
+                  if (current is HomeLoaded) {
+                    return true;
+                  }
+                  return false;
+                },
+                bloc: sl<HomeCubit>(),
+                builder: (context, state) {
+                  if (sl<HomeCubit>().redBlueBlankGame != null) {
+                    return SizedBox(
+                      child: Transform.rotate(
+                        transformHitTests: true,
+                        angle: -math.pi / 4,
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.6,
+                          height: MediaQuery.of(context).size.height * 0.4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: sl<HomeCubit>()
+                                .redBlueBlankGame!
+                                .theState
+                                .current
+                                .map((element) {
+                              return Expanded(
+                                child: Row(
+                                  children: element.map((element2) {
+                                    switch (element2) {
+                                      case TheStatePossibleValue.red:
+                                        return Expanded(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                                color: Colors.yellow),
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.08,
+                                            margin: const EdgeInsets.all(2),
+                                          ),
+                                        );
+                                      case TheStatePossibleValue.blue:
+                                        return Expanded(
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.08,
+                                            margin: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                                color: Colors.blue),
+                                          ),
+                                        );
+                                      case TheStatePossibleValue.blank:
+                                        return Expanded(
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.08,
+                                            margin: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                                color: Colors.white),
+                                          ),
+                                        );
+                                      case TheStatePossibleValue.anActiveSpace:
+                                        return Expanded(
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.08,
+                                            margin: const EdgeInsets.all(3),
+                                            color: Colors.transparent,
+                                          ),
+                                        );
+                                    }
+                                  }).toList(),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return const Offstage();
+                }),
+            BlocBuilder(
               buildWhen: (previous, current) {
                 if (current is HomeLoaded) {
                   return true;
@@ -140,232 +244,83 @@ class _MyMainScreenState extends State<MyMainScreen> {
               },
               bloc: sl<HomeCubit>(),
               builder: (context, state) {
-                if (sl<HomeCubit>().redBlueBlankGame != null) {
-                  return SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: sl<HomeCubit>()
-                          .redBlueBlankGame!
-                          .theArrayList
-                          .map((element) {
-                        return Expanded(
-                          child: Row(
-                            children: element.map((element2) {
-                              switch (element2) {
-                                case TheStatePossibleValue.red:
-                                  return Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.all(1),
-                                      color: Colors.red,
-                                    ),
-                                  );
-                                case TheStatePossibleValue.blue:
-                                  return Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.all(1),
-                                      color: Colors.blue,
-                                    ),
-                                  );
-                                case TheStatePossibleValue.blank:
-                                  return Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.all(1),
-                                      color: Colors.yellow,
-                                    ),
-                                  );
-                                case TheStatePossibleValue.anActiveSpace:
-                                  return Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.all(3),
-                                      color: Colors.grey,
-                                    ),
-                                  );
-                              }
-                            }).toList(),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                if (sl<HomeCubit>().algorithmAns != null) {
+                  return Column(
+                    children: [
+                      const Text(
+                        "This Algorithm Take",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(
+                        height: 6,
+                      ),
+                      Text(
+                        sl<HomeCubit>().algorithmAns.toString(),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(
+                        height: 6,
+                      ),
+                      Text(
+                        sl<HomeCubit>().exTime ?? "",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   );
                 }
                 return const Offstage();
-              }),
-          BlocBuilder(
-            bloc: sl<HomeCubit>(),
-            buildWhen: (previous, current) {
-              if (current is HomeShowPossibleDirection) return true;
-              return false;
-            },
-            builder: (context, state) {
-              return Expanded(
-                child: Column(
+              },
+            ),
+            Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          sl<HomeCubit>().redBlueBlankGame!.moveTop(2);
-                          sl<HomeCubit>().notify();
-                        },
-                        child: Text(
-                          'DoubleTop',
-                          style: state is HomeShowPossibleDirection &&
-                                  sl<HomeCubit>()
-                                      .possibleDirection
-                                      .contains(ThePossibleDirection.doubleTop)
-                              ? const TextStyle(color: Colors.red)
-                              : null,
-                        ),
-                      ),
+                    CustomButton(
+                      buttonName: 'Dfs',
+                      onTap: () {
+                        Stopwatch stopwatch = Stopwatch()..start();
+                        sl<HomeCubit>().initState(widget.blockSize);
+                        sl<HomeCubit>().redBlueBlankGame!.doDfs();
+                        sl<HomeCubit>().exTime =
+                            'Dsf executed in ${stopwatch.elapsed} \nand the number of visited state is ${sl<HomeCubit>().redBlueBlankGame!.vis.length}';
+                        showTheAlgorithmPath();
+                      },
                     ),
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          sl<HomeCubit>().redBlueBlankGame!.moveTop(1);
-                          sl<HomeCubit>().notify();
-                        },
-                        child: Text(
-                          'Top',
-                          style: state is HomeShowPossibleDirection &&
-                                  sl<HomeCubit>()
-                                      .possibleDirection
-                                      .contains(ThePossibleDirection.top)
-                              ? const TextStyle(color: Colors.red)
-                              : null,
-                        ),
-                      ),
+                    CustomButton(
+                      buttonName: 'Bfs',
+                      onTap: () {
+                        Stopwatch stopwatch = Stopwatch()..start();
+                        sl<HomeCubit>().initState(widget.blockSize);
+                        sl<HomeCubit>().redBlueBlankGame!.doBfs();
+                        sl<HomeCubit>().exTime =
+                            'Bsf executed in ${stopwatch.elapsed}\nand the number of visited state is ${sl<HomeCubit>().redBlueBlankGame!.vis.length}';
+                        showTheAlgorithmPath();
+                      },
                     ),
-                    Expanded(
-                        child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextButton(
-                            onPressed: () {
-                              sl<HomeCubit>().redBlueBlankGame!.moveLeft(2);
-                              sl<HomeCubit>().notify();
-                            },
-                            child: Text(
-                              'DoubleLeft',
-                              style: state is HomeShowPossibleDirection &&
-                                      sl<HomeCubit>()
-                                          .possibleDirection
-                                          .contains(
-                                              ThePossibleDirection.doubleLeft)
-                                  ? const TextStyle(color: Colors.red)
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: TextButton(
-                            onPressed: () {
-                              sl<HomeCubit>().redBlueBlankGame!.moveLeft(1);
-                              sl<HomeCubit>().notify();
-                            },
-                            child: Text(
-                              'Left',
-                              style: state is HomeShowPossibleDirection &&
-                                      sl<HomeCubit>()
-                                          .possibleDirection
-                                          .contains(ThePossibleDirection.left)
-                                  ? const TextStyle(color: Colors.red)
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            sl<HomeCubit>().showPossibleDirection(
-                                sl<HomeCubit>()
-                                    .redBlueBlankGame!
-                                    .getThePossibleDirection());
-                          },
-                          child: const Text(
-                            'Get Possible Dir',
-                            style: TextStyle(fontSize: 8),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: TextButton(
-                            onPressed: () {
-                              sl<HomeCubit>().redBlueBlankGame!.moveRight(1);
-                              sl<HomeCubit>().notify();
-                            },
-                            child: Text(
-                              'Right',
-                              style: state is HomeShowPossibleDirection &&
-                                      sl<HomeCubit>()
-                                          .possibleDirection
-                                          .contains(ThePossibleDirection.right)
-                                  ? const TextStyle(color: Colors.red)
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: TextButton(
-                            onPressed: () {
-                              sl<HomeCubit>().redBlueBlankGame!.moveRight(2);
-                              sl<HomeCubit>().notify();
-                            },
-                            child: Text(
-                              'DoubleRight',
-                              style: state is HomeShowPossibleDirection &&
-                                      sl<HomeCubit>()
-                                          .possibleDirection
-                                          .contains(
-                                              ThePossibleDirection.doubleRight)
-                                  ? const TextStyle(color: Colors.red)
-                                  : null,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )),
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          sl<HomeCubit>().redBlueBlankGame!.moveBottom(1);
-                          sl<HomeCubit>().notify();
-                        },
-                        child: Text(
-                          'Bottom',
-                          style: state is HomeShowPossibleDirection &&
-                                  sl<HomeCubit>()
-                                      .possibleDirection
-                                      .contains(ThePossibleDirection.bottom)
-                              ? const TextStyle(color: Colors.red)
-                              : null,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          sl<HomeCubit>().redBlueBlankGame!.moveBottom(2);
-                          sl<HomeCubit>().notify();
-                        },
-                        child: Text(
-                          'DoubleBottom',
-                          style: state is HomeShowPossibleDirection &&
-                                  sl<HomeCubit>().possibleDirection.contains(
-                                      ThePossibleDirection.doubleBottom)
-                              ? const TextStyle(color: Colors.red)
-                              : null,
-                        ),
-                      ),
+                    CustomButton(
+                      buttonName: 'Ucs',
+                      onTap: () {},
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-        ],
+                const SizedBox(
+                  height: 20,
+                ),
+                CustomButton(
+                  buttonName: 'Reset',
+                  onTap: () {
+                    sl<HomeCubit>().initState(widget.blockSize);
+                    sl<HomeCubit>().notify();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -376,174 +331,356 @@ class RedBlueBlankGame {
   final int theSizeOfEachBlock;
 
   /// the List that we store all state in it
-  List<List<TheStatePossibleValue>> theArrayList = [];
+  TheState theState = TheState();
 
-  /// the current position of the blank
-  int thePositionOfTheBlankInX = -1;
-  int thePositionOfTheBlankInY = -1;
+  /// the state that the current algorithm visited
+  List<TheState> vis = [];
+
+  /// the ans path for either algorithm bfs or dfs
+  List<TheState> thePathThatTheAlgorithmWentFrom = [];
+
+  /// if the dfs algorithm went for a win state
+  bool isWinState = false;
 
   RedBlueBlankGame(this.theSizeOfEachBlock) {
-    thePositionOfTheBlankInX = theSizeOfEachBlock - 1;
-    thePositionOfTheBlankInY = theSizeOfEachBlock - 1;
+    theState.current = [];
 
     /// fill the array initially with the red at the top and the blue at the bottom
     for (int i = 0; i <= theSizeOfEachBlock * 2 - 2; i++) {
-      theArrayList.add(<TheStatePossibleValue>[]);
+      theState.current.add(<TheStatePossibleValue>[]);
       for (int j = 0; j <= theSizeOfEachBlock * 2 - 2; j++) {
         if (i >= theSizeOfEachBlock - 1 && j >= theSizeOfEachBlock - 1) {
-          theArrayList[i].add(TheStatePossibleValue.red);
+          theState.current[i].add(TheStatePossibleValue.red);
         } else if (i < theSizeOfEachBlock && j < theSizeOfEachBlock) {
-          theArrayList[i].add(TheStatePossibleValue.blue);
+          theState.current[i].add(TheStatePossibleValue.blue);
         } else {
-          theArrayList[i].add(TheStatePossibleValue.anActiveSpace);
+          theState.current[i].add(TheStatePossibleValue.anActiveSpace);
         }
       }
     }
+    theState.thePositionOfTheBlankInX = theSizeOfEachBlock - 1;
+    theState.thePositionOfTheBlankInY = theSizeOfEachBlock - 1;
 
     /// initial the blank
-    theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY] =
-        TheStatePossibleValue.blank;
+    theState.current[theState.thePositionOfTheBlankInX]
+        [theState.thePositionOfTheBlankInY] = TheStatePossibleValue.blank;
   }
 
-  bool checkIfItPossibleToMoveTop(int step) {
-    if (thePositionOfTheBlankInX - step >= 0 &&
-        theArrayList[thePositionOfTheBlankInX - step]
-                [thePositionOfTheBlankInY] !=
+  bool checkIfItPossibleToMoveTop(int step, TheState li) {
+    if (li.thePositionOfTheBlankInX - step >= 0 &&
+        li.current[li.thePositionOfTheBlankInX - step]
+                [li.thePositionOfTheBlankInY] !=
             TheStatePossibleValue.anActiveSpace) {
       return true;
     }
     return false;
   }
 
-  bool checkIfItPossibleToMoveBottom(int step) {
-    if (thePositionOfTheBlankInX + step < theSizeOfEachBlock * 2 - 1 &&
-        theArrayList[thePositionOfTheBlankInX + step]
-                [thePositionOfTheBlankInY] !=
+  bool checkIfItPossibleToMoveBottom(int step, TheState li) {
+    if (li.thePositionOfTheBlankInX + step < theSizeOfEachBlock * 2 - 1 &&
+        li.current[li.thePositionOfTheBlankInX + step]
+                [li.thePositionOfTheBlankInY] !=
             TheStatePossibleValue.anActiveSpace) {
       return true;
     }
     return false;
   }
 
-  bool checkIfItPossibleToMoveLeft(int step) {
-    if (thePositionOfTheBlankInY - step >= 0 &&
-        theArrayList[thePositionOfTheBlankInX]
-                [thePositionOfTheBlankInY - step] !=
+  bool checkIfItPossibleToMoveLeft(int step, TheState li) {
+    if (li.thePositionOfTheBlankInY - step >= 0 &&
+        li.current[li.thePositionOfTheBlankInX]
+                [li.thePositionOfTheBlankInY - step] !=
             TheStatePossibleValue.anActiveSpace) {
       return true;
     }
     return false;
   }
 
-  bool checkIfItPossibleToMoveRight(int step) {
-    if (thePositionOfTheBlankInY + step < theSizeOfEachBlock * 2 - 1 &&
-        theArrayList[thePositionOfTheBlankInX]
-                [thePositionOfTheBlankInY + step] !=
+  bool checkIfItPossibleToMoveRight(int step, TheState li) {
+    if (li.thePositionOfTheBlankInY + step < theSizeOfEachBlock * 2 - 1 &&
+        li.current[li.thePositionOfTheBlankInX]
+                [li.thePositionOfTheBlankInY + step] !=
             TheStatePossibleValue.anActiveSpace) {
       return true;
     }
     return false;
   }
 
-  moveTop(int step) {
-    if (checkIfItPossibleToMoveTop(step)) {
+  moveTop(int step, TheState li) {
+    if (checkIfItPossibleToMoveTop(step, li)) {
       TheStatePossibleValue x =
-          theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY];
-      theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY] =
-          theArrayList[thePositionOfTheBlankInX - step]
-              [thePositionOfTheBlankInY];
-      theArrayList[thePositionOfTheBlankInX - step][thePositionOfTheBlankInY] =
-          x;
-      thePositionOfTheBlankInX -= step;
+          li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY];
+      li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY] =
+          li.current[li.thePositionOfTheBlankInX - step]
+              [li.thePositionOfTheBlankInY];
+      li.current[li.thePositionOfTheBlankInX - step]
+          [li.thePositionOfTheBlankInY] = x;
+      li.thePositionOfTheBlankInX -= step;
+
+      return li;
     }
+    return null;
   }
 
-  moveBottom(int step) {
-    if (checkIfItPossibleToMoveBottom(step)) {
+  moveBottom(int step, TheState li) {
+    if (checkIfItPossibleToMoveBottom(step, li)) {
       TheStatePossibleValue x =
-          theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY];
-      theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY] =
-          theArrayList[thePositionOfTheBlankInX + step]
-              [thePositionOfTheBlankInY];
-      theArrayList[thePositionOfTheBlankInX + step][thePositionOfTheBlankInY] =
-          x;
-      thePositionOfTheBlankInX += step;
+          li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY];
+      li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY] =
+          li.current[li.thePositionOfTheBlankInX + step]
+              [li.thePositionOfTheBlankInY];
+      li.current[li.thePositionOfTheBlankInX + step]
+          [li.thePositionOfTheBlankInY] = x;
+      li.thePositionOfTheBlankInX += step;
+      return li;
     }
+    return null;
   }
 
-  moveLeft(int step) {
-    if (checkIfItPossibleToMoveLeft(step)) {
+  moveLeft(int step, TheState li) {
+    if (checkIfItPossibleToMoveLeft(step, li)) {
       TheStatePossibleValue x =
-          theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY];
-      theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY] =
-          theArrayList[thePositionOfTheBlankInX]
-              [thePositionOfTheBlankInY - step];
-      theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY - step] =
-          x;
-      thePositionOfTheBlankInY -= step;
+          li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY];
+      li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY] =
+          li.current[li.thePositionOfTheBlankInX]
+              [li.thePositionOfTheBlankInY - step];
+      li.current[li.thePositionOfTheBlankInX]
+          [li.thePositionOfTheBlankInY - step] = x;
+      li.thePositionOfTheBlankInY -= step;
+      return li;
     }
+    return null;
   }
 
-  moveRight(int step) {
-    if (checkIfItPossibleToMoveRight(step)) {
+  moveRight(int step, TheState li) {
+    if (checkIfItPossibleToMoveRight(step, li)) {
       TheStatePossibleValue x =
-          theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY];
-      theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY] =
-          theArrayList[thePositionOfTheBlankInX]
-              [thePositionOfTheBlankInY + step];
-      theArrayList[thePositionOfTheBlankInX][thePositionOfTheBlankInY + step] =
-          x;
-      thePositionOfTheBlankInY += step;
+          li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY];
+      li.current[li.thePositionOfTheBlankInX][li.thePositionOfTheBlankInY] =
+          li.current[li.thePositionOfTheBlankInX]
+              [li.thePositionOfTheBlankInY + step];
+      li.current[li.thePositionOfTheBlankInX]
+          [li.thePositionOfTheBlankInY + step] = x;
+      li.thePositionOfTheBlankInY += step;
+      return li;
     }
+    return null;
   }
 
-  List<ThePossibleDirection> getThePossibleDirection() {
+  List<ThePossibleDirection> getThePossibleDirection(TheState currentList) {
     List<ThePossibleDirection> li = [];
-    if (checkIfItPossibleToMoveBottom(1)) li.add(ThePossibleDirection.bottom);
-    if (checkIfItPossibleToMoveBottom(2)) {
+
+    if (checkIfItPossibleToMoveLeft(1, currentList)) {
+      li.add(ThePossibleDirection.left);
+    }
+    if (checkIfItPossibleToMoveLeft(2, currentList)) {
+      li.add(ThePossibleDirection.doubleLeft);
+    }
+    if (checkIfItPossibleToMoveBottom(1, currentList)) {
+      li.add(ThePossibleDirection.bottom);
+    }
+    if (checkIfItPossibleToMoveBottom(2, currentList)) {
       li.add(ThePossibleDirection.doubleBottom);
     }
-    if (checkIfItPossibleToMoveLeft(1)) li.add(ThePossibleDirection.left);
-    if (checkIfItPossibleToMoveLeft(2)) li.add(ThePossibleDirection.doubleLeft);
-    if (checkIfItPossibleToMoveRight(1)) li.add(ThePossibleDirection.right);
-    if (checkIfItPossibleToMoveRight(2)) {
+    if (checkIfItPossibleToMoveRight(1, currentList)) {
+      li.add(ThePossibleDirection.right);
+    }
+    if (checkIfItPossibleToMoveRight(2, currentList)) {
       li.add(ThePossibleDirection.doubleRight);
     }
-    if (checkIfItPossibleToMoveTop(1)) li.add(ThePossibleDirection.top);
-    if (checkIfItPossibleToMoveTop(2)) li.add(ThePossibleDirection.doubleTop);
+    if (checkIfItPossibleToMoveTop(1, currentList)) {
+      li.add(ThePossibleDirection.top);
+    }
+    if (checkIfItPossibleToMoveTop(2, currentList)) {
+      li.add(ThePossibleDirection.doubleTop);
+    }
     return li;
   }
 
-  bool win() {
+  bool win(TheState li) {
     bool check = true;
     for (int i = 0; i <= theSizeOfEachBlock * 2 - 2; i++) {
-      theArrayList.add(<TheStatePossibleValue>[]);
       for (int j = 0; j <= theSizeOfEachBlock * 2 - 2; j++) {
+        if (i == j && i == theSizeOfEachBlock - 1) continue;
         if (i >= theSizeOfEachBlock - 1 &&
             j >= theSizeOfEachBlock - 1 &&
-            theArrayList[i][j] != TheStatePossibleValue.blue) {
+            li.current[i][j] != TheStatePossibleValue.blue) {
           check = false;
         } else if (i < theSizeOfEachBlock &&
             j < theSizeOfEachBlock &&
-            theArrayList[i][j] != TheStatePossibleValue.red) {
+            li.current[i][j] != TheStatePossibleValue.red) {
           check = false;
-        } else {
-          theArrayList[i].add(TheStatePossibleValue.anActiveSpace);
         }
       }
     }
     return check;
   }
 
-  bool isEqual(List<List<TheStatePossibleValue>> list) {
+  bool isEqual(TheState list, TheState li) {
     bool check = true;
     for (int i = 0; i <= theSizeOfEachBlock * 2 - 2; i++) {
-      theArrayList.add(<TheStatePossibleValue>[]);
       for (int j = 0; j <= theSizeOfEachBlock * 2 - 2; j++) {
-        if (list != theArrayList) check = false;
+        if (list.current[i][j] != li.current[i][j]) check = false;
       }
     }
     return check;
+  }
+
+  void printCurrentState(TheState list) {
+    String out = '';
+    for (var element in list.current) {
+      for (var element in element) {
+        out += '${element.name} ';
+      }
+      out += '\n';
+    }
+    if (kDebugMode) {
+      print('CURRENT STATE');
+      print(out);
+    }
+  }
+
+  bool checkIfVisited(TheState li2) {
+    bool test = false;
+    for (var element in vis) {
+      if (isEqual(element, li2)) {
+        test = true;
+        break;
+      }
+    }
+    return test;
+  }
+
+  void makeCurrentVisited(TheState li2) {
+    vis.add(li2);
+  }
+
+  List<TheState> getNextState(TheState li) {
+    List<ThePossibleDirection> possible = getThePossibleDirection(li);
+    List<TheState> ans = [];
+    for (var element in possible) {
+      switch (element) {
+        case ThePossibleDirection.left:
+          ans.add(moveLeft(1, li.copy()));
+          break;
+        case ThePossibleDirection.doubleLeft:
+          ans.add(moveLeft(2, li.copy()));
+          break;
+        case ThePossibleDirection.right:
+          ans.add(moveRight(1, li.copy()));
+          break;
+        case ThePossibleDirection.doubleRight:
+          ans.add(moveRight(2, li.copy()));
+          break;
+        case ThePossibleDirection.top:
+          ans.add(moveTop(1, li.copy()));
+          break;
+        case ThePossibleDirection.doubleTop:
+          ans.add(moveTop(2, li.copy()));
+          break;
+        case ThePossibleDirection.bottom:
+          ans.add(moveBottom(1, li.copy()));
+          break;
+        case ThePossibleDirection.doubleBottom:
+          ans.add(moveBottom(2, li.copy()));
+          break;
+      }
+    }
+    return ans;
+  }
+
+  void doDfs() {
+    vis.clear();
+    thePathThatTheAlgorithmWentFrom.clear();
+    isWinState = false;
+    dfs(theState);
+  }
+
+  void dfs(TheState li) {
+    if (checkIfVisited(li) || isWinState) return;
+    if (win(li)) {
+      isWinState = true;
+      while (li.par != null) {
+        thePathThatTheAlgorithmWentFrom.add(li);
+        li = li.par!;
+      }
+      return;
+    }
+    makeCurrentVisited(li);
+    List<TheState> nextState = getNextState(li);
+    for (var element in nextState) {
+      dfs(element);
+    }
+  }
+
+  void doBfs() {
+    vis.clear();
+    thePathThatTheAlgorithmWentFrom.clear();
+    isWinState = false;
+    bfs();
+  }
+
+  void bfs() {
+    Queue<TheState> qe = Queue();
+    qe.add(theState);
+    while (qe.isNotEmpty) {
+      TheState current = qe.first;
+      if (win(current)) {
+        while (current.par != null) {
+          thePathThatTheAlgorithmWentFrom.add(current.copy());
+          current = current.par!;
+        }
+        break;
+      }
+      qe.removeFirst();
+      if (checkIfVisited(current)) continue;
+      makeCurrentVisited(current);
+      List<TheState> nextState = getNextState(current);
+      for (var element in nextState) {
+        qe.add(element);
+      }
+    }
+  }
+}
+
+class TheState {
+  List<List<TheStatePossibleValue>> current = [];
+  int thePositionOfTheBlankInX = -1;
+  int thePositionOfTheBlankInY = -1;
+  int cost = 0;
+  TheState? par;
+
+  TheState copy() {
+    TheState theState = TheState();
+    theState.thePositionOfTheBlankInX = thePositionOfTheBlankInX;
+    theState.thePositionOfTheBlankInY = thePositionOfTheBlankInY;
+    theState.cost = cost + 1;
+    int i = 0;
+    for (var element in current) {
+      theState.current.add([]);
+      for (var element in element) {
+        theState.current[i].add(element);
+      }
+      i++;
+    }
+    theState.par = this;
+    return theState;
+  }
+
+  TheState copyPar() {
+    TheState theState = TheState();
+    theState.thePositionOfTheBlankInX = thePositionOfTheBlankInX;
+    theState.thePositionOfTheBlankInY = thePositionOfTheBlankInY;
+    theState.cost = cost;
+    int i = 0;
+    for (var element in current) {
+      theState.current.add([]);
+      for (var element in element) {
+        theState.current[i].add(element);
+      }
+      i++;
+    }
+    return theState;
   }
 }
 
@@ -561,3 +698,5 @@ enum ThePossibleDirection {
   bottom,
   doubleBottom
 }
+
+enum Algorithm { dfs, bfs }

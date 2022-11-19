@@ -7,26 +7,23 @@ part 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit() : super(HomeInitial());
   RedBlueBlankGame? redBlueBlankGame;
-  List<ThePossibleDirection> possibleDirection = [];
-
+  int? algorithmAns;
+  String? exTime;
   void initState(int blockSize) {
     redBlueBlankGame = RedBlueBlankGame(blockSize);
+    algorithmAns = null;
+    exTime = null;
     notify();
   }
 
   void dispose() {
+    exTime = null;
     redBlueBlankGame = null;
-  }
-
-  void showPossibleDirection(List<ThePossibleDirection> li) {
-    possibleDirection = li;
-    emit(HomeLoading());
-    emit(HomeShowPossibleDirection());
+    algorithmAns = null;
   }
 
   void notify() {
     emit(HomeLoading());
     emit(HomeLoaded());
-    showPossibleDirection([]);
   }
 }
