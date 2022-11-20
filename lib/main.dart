@@ -485,23 +485,17 @@ class RedBlueBlankGame {
   List<ThePossibleDirection> getThePossibleDirection(TheState currentList) {
     List<ThePossibleDirection> li = [];
 
-    if (checkIfItPossibleToMoveLeft(1, currentList)) {
-      li.add(ThePossibleDirection.left);
-    }
-    if (checkIfItPossibleToMoveLeft(2, currentList)) {
-      li.add(ThePossibleDirection.doubleLeft);
-    }
-    if (checkIfItPossibleToMoveBottom(1, currentList)) {
-      li.add(ThePossibleDirection.bottom);
-    }
-    if (checkIfItPossibleToMoveBottom(2, currentList)) {
-      li.add(ThePossibleDirection.doubleBottom);
-    }
     if (checkIfItPossibleToMoveRight(1, currentList)) {
       li.add(ThePossibleDirection.right);
     }
     if (checkIfItPossibleToMoveRight(2, currentList)) {
       li.add(ThePossibleDirection.doubleRight);
+    }
+    if (checkIfItPossibleToMoveLeft(1, currentList)) {
+      li.add(ThePossibleDirection.left);
+    }
+    if (checkIfItPossibleToMoveLeft(2, currentList)) {
+      li.add(ThePossibleDirection.doubleLeft);
     }
     if (checkIfItPossibleToMoveTop(1, currentList)) {
       li.add(ThePossibleDirection.top);
@@ -509,6 +503,13 @@ class RedBlueBlankGame {
     if (checkIfItPossibleToMoveTop(2, currentList)) {
       li.add(ThePossibleDirection.doubleTop);
     }
+    if (checkIfItPossibleToMoveBottom(1, currentList)) {
+      li.add(ThePossibleDirection.bottom);
+    }
+    if (checkIfItPossibleToMoveBottom(2, currentList)) {
+      li.add(ThePossibleDirection.doubleBottom);
+    }
+
     return li;
   }
 
@@ -575,17 +576,17 @@ class RedBlueBlankGame {
     List<TheState> ans = [];
     for (var element in possible) {
       switch (element) {
-        case ThePossibleDirection.left:
-          ans.add(moveLeft(1, li.copy()));
-          break;
-        case ThePossibleDirection.doubleLeft:
-          ans.add(moveLeft(2, li.copy()));
-          break;
         case ThePossibleDirection.right:
           ans.add(moveRight(1, li.copy()));
           break;
         case ThePossibleDirection.doubleRight:
           ans.add(moveRight(2, li.copy()));
+          break;
+        case ThePossibleDirection.left:
+          ans.add(moveLeft(1, li.copy()));
+          break;
+        case ThePossibleDirection.doubleLeft:
+          ans.add(moveLeft(2, li.copy()));
           break;
         case ThePossibleDirection.top:
           ans.add(moveTop(1, li.copy()));
