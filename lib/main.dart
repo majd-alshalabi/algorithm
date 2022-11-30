@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:math' as math;
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -288,6 +289,7 @@ class _MyMainScreenState extends State<MyMainScreen> {
                         sl<HomeCubit>().redBlueBlankGame!.doDfs();
                         sl<HomeCubit>().exTime =
                             'Dsf executed in ${stopwatch.elapsed} \nand the number of visited state is ${sl<HomeCubit>().redBlueBlankGame!.vis.length}';
+                        print(sl<HomeCubit>().redBlueBlankGame!.maxDepth);
                         showTheAlgorithmPath();
                       },
                     ),
@@ -299,6 +301,7 @@ class _MyMainScreenState extends State<MyMainScreen> {
                         sl<HomeCubit>().redBlueBlankGame!.doBfs();
                         sl<HomeCubit>().exTime =
                             'Bsf executed in ${stopwatch.elapsed}\nand the number of visited state is ${sl<HomeCubit>().redBlueBlankGame!.vis.length}';
+                        print(sl<HomeCubit>().redBlueBlankGame!.maxDepth);
                         showTheAlgorithmPath();
                       },
                     ),
@@ -310,6 +313,7 @@ class _MyMainScreenState extends State<MyMainScreen> {
                         sl<HomeCubit>().redBlueBlankGame!.doUcs();
                         sl<HomeCubit>().exTime =
                             'Ucs executed in ${stopwatch.elapsed}\nand the number of visited state is ${sl<HomeCubit>().redBlueBlankGame!.vis.length}';
+                        print(sl<HomeCubit>().redBlueBlankGame!.maxDepth);
                         showTheAlgorithmPath();
                       },
                     ),
@@ -320,7 +324,15 @@ class _MyMainScreenState extends State<MyMainScreen> {
                 ),
                 CustomButton(
                   buttonName: 'A*',
-                  onTap: () {},
+                  onTap: () {
+                    Stopwatch stopwatch = Stopwatch()..start();
+                    sl<HomeCubit>().initState(widget.blockSize);
+                    sl<HomeCubit>().redBlueBlankGame!.doAStar();
+                    sl<HomeCubit>().exTime =
+                        'A* executed in ${stopwatch.elapsed}\nand the number of visited state is ${sl<HomeCubit>().redBlueBlankGame!.visAStar.length}';
+                    print(sl<HomeCubit>().redBlueBlankGame!.maxDepth);
+                    showTheAlgorithmPath();
+                  },
                 ),
                 const SizedBox(
                   height: 10,
@@ -356,6 +368,10 @@ class RedBlueBlankGame {
 
   /// if the dfs algorithm went for a win state
   bool isWinState = false;
+
+  int maxDepth = 0;
+
+  List<AStarModel> visAStar = [];
 
   RedBlueBlankGame(this.theSizeOfEachBlock) {
     theState.current = [];
@@ -609,6 +625,7 @@ class RedBlueBlankGame {
     vis.clear();
     thePathThatTheAlgorithmWentFrom.clear();
     isWinState = false;
+    maxDepth = 0;
     dfs(theState);
   }
 
@@ -625,6 +642,7 @@ class RedBlueBlankGame {
     makeCurrentVisited(li);
     List<TheState> nextState = getNextState(li);
     for (var element in nextState) {
+      maxDepth = max(element.cost, maxDepth);
       dfs(element);
     }
   }
@@ -633,6 +651,7 @@ class RedBlueBlankGame {
     vis.clear();
     thePathThatTheAlgorithmWentFrom.clear();
     isWinState = false;
+    maxDepth = 0;
     bfs();
   }
 
@@ -653,6 +672,8 @@ class RedBlueBlankGame {
       makeCurrentVisited(current);
       List<TheState> nextState = getNextState(current);
       for (var element in nextState) {
+        print(element.getHeo());
+        maxDepth = max(element.cost, maxDepth);
         qe.add(element);
       }
     }
@@ -662,12 +683,13 @@ class RedBlueBlankGame {
     vis.clear();
     thePathThatTheAlgorithmWentFrom.clear();
     isWinState = false;
-    bfs();
+    maxDepth = 0;
+    ucs();
   }
 
   void ucs() {
     PriorityQueue<TheState> qe =
-        PriorityQueue<TheState>((a, b) => b.cost.compareTo(a.cost));
+        PriorityQueue<TheState>((a, b) => a.cost.compareTo(b.cost));
     qe.enQueue(theState);
     while (qe.isNotEmpty) {
       TheState current = qe.peek!;
@@ -683,6 +705,78 @@ class RedBlueBlankGame {
       makeCurrentVisited(current);
       List<TheState> nextState = getNextState(current);
       for (var element in nextState) {
+        maxDepth = max(element.cost, maxDepth);
+        qe.enQueue(element);
+      }
+    }
+  }
+
+  int? checkIfAStarVisited(TheState li2) {
+    int? test;
+    for (var element in visAStar) {
+      if (isEqual(element.current, li2)) {
+        if (test == null) {
+          test = element.cost;
+        } else {
+          test = min(element.cost, test);
+        }
+      }
+    }
+    return test;
+  }
+
+  void makeCurrentAStarVisited(TheState li2) {
+    visAStar.add(AStarModel(li2, li2.cost + li2.getHeo()));
+  }
+
+  changeVisAStarVal(
+    TheState li2,
+    int cost,
+  ) {
+    for (int i = 0; i < visAStar.length; i++) {
+      if (isEqual(visAStar[i].current, li2)) {
+        visAStar[i].cost = cost;
+      }
+    }
+  }
+
+  void doAStar() {
+    visAStar.clear();
+    thePathThatTheAlgorithmWentFrom.clear();
+    isWinState = false;
+    maxDepth = 0;
+    aStar();
+  }
+
+  void aStar() {
+    PriorityQueue<TheState> qe = PriorityQueue<TheState>(
+        (a, b) => (a.cost + a.getHeo()).compareTo(b.cost + b.getHeo()));
+    qe.enQueue(theState);
+    while (qe.isNotEmpty) {
+      TheState current = qe.peek!;
+      if (win(current)) {
+        while (current.par != null) {
+          thePathThatTheAlgorithmWentFrom.add(current.copy());
+          current = current.par!;
+        }
+        break;
+      }
+      qe.deQueue();
+      int? currentCost = checkIfAStarVisited(current);
+      if (currentCost != null) {
+        if (current.cost + current.getHeo() < currentCost) {
+          changeVisAStarVal(current, current.cost + current.getHeo());
+        } else {
+          continue;
+        }
+      }
+      if (currentCost == null) {
+        makeCurrentAStarVisited(current);
+      }
+      // if (current.cost > 30) continue;
+      List<TheState> nextState = getNextState(current);
+      for (var element in nextState) {
+        maxDepth = max(element.cost, maxDepth);
         qe.enQueue(element);
       }
     }
@@ -695,6 +789,24 @@ class TheState {
   int thePositionOfTheBlankInY = -1;
   int cost = 0;
   TheState? par;
+
+  int getHeo() {
+    int res = 0;
+    for (int i = 0; i < current.length; i++) {
+      for (int j = 0; j < current.length; j++) {
+        if (i >= current.length / 2 - 1 &&
+            j >= current.length / 2 - 1 &&
+            current[i][j] != TheStatePossibleValue.blue) {
+          res++;
+        } else if (i < current.length / 2 &&
+            j < current.length / 2 &&
+            current[i][j] != TheStatePossibleValue.yellow) {
+          res++;
+        }
+      }
+    }
+    return res;
+  }
 
   TheState copy() {
     TheState theState = TheState();
@@ -746,3 +858,9 @@ enum ThePossibleDirection {
 }
 
 enum Algorithm { dfs, bfs }
+
+class AStarModel {
+  final TheState current;
+  int cost;
+  AStarModel(this.current, this.cost);
+}
